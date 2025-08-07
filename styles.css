@@ -1,0 +1,395 @@
+:root{
+  /* 统一所有类型的位格尺寸，并在当前基础上再增大约 10% */
+  --bit-size: 22px;   /* 原 19.8px -> 22px（约 +10%） */
+  --bit-gap: 2px;     /* 原 1.8px -> 2px，按比例微调 */
+
+  /* 主题色（默认浅色） */
+  --color-bg:#ffffff;
+  --color-text:#222222;
+  --color-muted:#666666;
+  --color-hex:#444444;
+  --color-border:#d0d7de;
+  --color-border-soft: rgba(0,0,0,.08);
+  --focus-ring: rgba(9,105,218,.18);
+
+  /* 位字段配色（浅色） */
+  --color-sign:#8ea1ff;
+  --color-exp:#b4f1b4;
+  --color-frac:#ffb8c6;
+
+  /* 特殊值按钮（浅色主题下的按钮底色与样式变量） */
+  --btn-bg: linear-gradient(180deg, #f6f8fa, #eef1f4);
+  --btn-text: #24292f;
+  --btn-border: #d0d7de;
+  --btn-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 1px 3px rgba(0,0,0,.08);
+
+  /* 字体 */
+  --font: "Inter", "Segoe UI", "Roboto", "Noto Sans", "Helvetica Neue", Arial, system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* 深色主题覆盖（通过 <html data-theme="dark"> 激活） */
+html[data-theme="dark"]{
+  --color-bg: #0f1116;
+  --color-text: #e6e6e6;
+  --color-muted: #9aa4b2;
+  --color-hex: #e6edf3;
+  --color-border: #30363d;
+  --color-border-soft: rgba(255,255,255,.10);
+  --focus-ring: rgba(56,139,253,.35);
+
+  /* 位字段配色（深色反色）：在深色背景上降低亮度、提高可读性 */
+  --color-sign:#263384;  /* 由浅蓝反转为更深的蓝，避免刺眼 */
+  --color-exp:#295a3d;   /* 绿调压暗 */
+  --color-frac:#b0344f;  /* 粉色压暗提高对比 */
+
+  /* 特殊值按钮（深色主题下的按钮底色与样式变量） */
+  --btn-bg: linear-gradient(180deg, #2b2f36, #21262d);
+  --btn-text: #e6edf3;
+  --btn-border: #30363d;
+  --btn-shadow: 0 1px 0 rgba(255,255,255,.02) inset, 0 1px 4px rgba(0,0,0,.35);
+}
+
+/* 深色主题覆盖（通过 <html data-theme="dark"> 激活） */
+html[data-theme="dark"]{
+  --color-bg: #0f1116;
+  --color-text: #e6e6e6;
+  --color-muted: #9aa4b2;
+  --color-hex: #e6edf3;
+  --color-border: #30363d;
+  --color-border-soft: rgba(255,255,255,.10);
+  --focus-ring: rgba(56,139,253,.35);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family: var(--font);
+  color:var(--color-text);
+  line-height:1.7; /* 再提升一些，配合更大的字号 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--color-bg);
+  letter-spacing: .1px; /* 轻微字距提升修长感受 */
+}
+
+.container{
+  max-width: 1600px;
+  padding: 32px 24px 80px;
+  margin: 0 auto;
+}
+
+h1{margin: 0 0 10px; font-size: 32px; letter-spacing: .3px; font-weight: 680;}
+.lead{margin: 0 0 26px; color: var(--color-muted); font-size: 16px;}
+.lead a{color:#3b82f6; text-decoration:none}
+.lead a:hover{text-decoration:underline}
+
+/* 布局：单列栅格，避免不同类型同排显示 */
+#blocks{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px; /* 略微缩小每个类型区块之间的垂直间距（原 24px） */
+}
+.block{
+  margin: 0; /* 交由 grid 控制垂直间距 */
+}
+.block h2{
+  margin: 0 0 10px;
+  font-size: 21px;
+  font-weight: 680;
+  letter-spacing: .2px;
+}
+.bits-row{
+  display:flex;
+  align-items:center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+/* FP64：让十六进制显示默认换到第二行（位格下方） */
+.block.fp64 .bits-row{
+  align-items: flex-start; /* 顶对齐，避免 baseline 造成垂直错位 */
+}
+.block.fp64 .eq{
+  flex-basis: 100%;   /* 占满一行，强制换行到位格下方 */
+  margin-top: 4px;    /* 位格与十六进制之间留出少许间距 */
+}
+.bits{
+  display:flex;
+  align-items:center;
+  flex-wrap: wrap; /* 宽屏展开、必要时换行避免拥挤 */
+  overflow-x: visible;
+  padding-bottom: 4px;
+  row-gap: 6px;
+}
+ 
+/* FP64 强制多行换行，避免水平滚动 */
+.block.fp64 .bits{
+  flex-wrap: wrap;
+}
+.block.fp64 .indexes{
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+.block.fp64 .index{
+  /* 允许索引与位格一起换行，避免必须右滑 */
+  display: inline-block;
+}
+.bit{
+  width: var(--bit-size);
+  height: var(--bit-size);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 12px; /* 提升个位数字易读性 */
+  border-radius: 4px; /* 略圆润 */
+  margin-right: var(--bit-gap);
+  user-select: none;
+  cursor: pointer;
+  border: 1px solid var(--color-border-soft);
+  color: #000;
+}
+/* 深色下位格文本反色增强可读性 */
+html[data-theme="dark"] .bit{
+  border: 1px solid var(--color-border-soft);
+  color: #fff;
+}
+.bit:last-child{margin-right:0}
+
+.bit.sign{background: var(--color-sign)}
+.bit.exp{background: var(--color-exp)}
+.bit.frac{background: var(--color-frac)}
+/* 深色下对位格背景已经通过变量反色，不需要额外规则 */
+/* 统一所有断点使用同一尺寸，不再在大屏单独调整，确保“一致” */
+@media (min-width: 1200px){
+  :root{
+    --bit-size: 22px;
+    --bit-gap: 2px;
+  }
+}
+/* 移除 FP64 的单独缩小，改为使用统一尺寸，仅保留换行行距微调以避免拥挤 */
+.block.fp64 .bits { row-gap: 4px; }
+.block.fp64 .bit,
+.block.fp64 .indexes .index {
+  width: var(--bit-size);
+  height: var(--bit-size);
+  margin-right: var(--bit-gap);
+}
+
+.indexes{
+  display:flex;
+  font-size: 11px; /* 略大更清晰 */
+  color: var(--color-muted);
+  margin-bottom: 4px;
+  overflow-x: visible; /* 允许换行时不出现水平滚动 */
+  flex-wrap: wrap;
+  row-gap: 4px;
+  letter-spacing: .15px;
+}
+.index{
+  width: var(--bit-size);
+  text-align:center;
+  margin-right: var(--bit-gap);
+}
+.index:last-child{margin-right:0}
+
+.eq{
+  font-family: var(--mono);
+  font-size: 14px; /* 等式稍大更清晰 */
+  color: var(--color-hex);
+  white-space: nowrap;
+  letter-spacing: .2px;
+  word-break: break-all;
+}
+.eq .hex{
+  font-weight: 600;
+}
+
+.formula{
+  display:flex;
+  align-items:center;
+  gap: 8px; /* 与更大字号匹配 */
+  margin-top: 10px;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  letter-spacing: .15px;
+}
+.formula .tag{
+  padding: 2px 5px; /* 略缩 */
+  border-radius: 4px;
+}
+.formula .tag.sign{background: var(--color-sign)}
+.formula .tag.exp{background: var(--color-exp)}
+.formula .tag.frac{background: var(--color-frac)}
+
+.inputs{
+  display:flex;
+  gap: 11px; /* 原 10px，横向间距增加约 10% */
+  align-items:center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+/* 统一的特殊值按钮条容器（替代行内样式） */
+.specials-bar{
+  display:flex;
+  flex-wrap: wrap;
+  margin-top: 0;
+  gap: 6px;
+}
+
+/* 统一按钮基类：供 JS 添加的 .sv-btn 使用（替代内联样式，支持主题切换） */
+.sv-btn{
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 6px 10px;
+  height: 32px;
+  line-height: 20px;
+  margin: 0 6px 0 0;
+  border: 1px solid var(--btn-border);
+  border-radius: 8px;
+  background: var(--btn-bg);  /* 这里是按钮“本身的颜色” */
+  color: var(--btn-text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s ease;
+  box-shadow: var(--btn-shadow);
+}
+.sv-btn:hover{
+  /* 悬停时仅略提升亮度，以便感知 */
+  filter: brightness(1.02);
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+}
+.sv-btn:active{
+  transform: translateY(0) scale(0.98);
+  filter: brightness(0.96);
+}
+
+/* 统一所有按钮在深色主题的视觉：采用 GitHub 风格的“默认按钮”底色 */
+/* 深色主题下统一按钮底色（更素雅、中性灰，减少彩色偏移） */
+html[data-theme="dark"] button{
+  /* 基础为中性石墨灰，轻柔内阴影模拟层次 */
+  background: linear-gradient(180deg, #2b2f36 0%, #21262d 100%);
+  border-color: #30363d;
+  color: #e6edf3;
+  box-shadow: 0 1px 0 rgba(255,255,255,.02) inset, 0 1px 4px rgba(0,0,0,.35);
+}
+html[data-theme="dark"] button:hover{
+  background: linear-gradient(180deg, #313641 0%, #262c33 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 2px 10px rgba(0,0,0,.5);
+  filter: none;
+}
+html[data-theme="dark"] button:active{
+  background: linear-gradient(180deg, #242932 0%, #1b2026 100%);
+  filter: none;
+}
+input.hex, input.dec{
+  font-family: var(--mono);
+  font-size: 20px; /* 调大输入框字体，提升可读性（原 14px） */
+  padding: 6px 11px; /* 水平内边距 +10%，与整体更协调 */
+  border:1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-radius: 8px; /* 与按钮圆角保持一致 */
+  outline:none;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease, color .15s ease;
+}
+/* 深色主题下为十六进制/十进制输入框加强边框可见性 */
+html[data-theme="dark"] input.hex,
+html[data-theme="dark"] input.dec{
+  border-color: #6b7280;               /* 再提升亮度：slate-500 级别 */
+  background: #0f1116;                 /* 保持暗背景 */
+  color: #e6edf3;                      /* 高对比文本 */
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.10) inset; /* 内描边再提亮 */
+}
+/* 深色主题下的聚焦态也使用可见的高亮边框与环 */
+html[data-theme="dark"] input.hex:focus,
+html[data-theme="dark"] input.dec:focus{
+  border-color: #58a6ff;
+  box-shadow: 0 0 0 3px rgba(56,139,253,.35);
+}
+/* 将十进制输入框调长，便于显示更长十进制文本 */
+input.dec{
+  min-width: 200px;   /* 默认更长（约较常见宽度+15~20%） */
+  flex: 0 0 auto;     /* 不被压缩 */
+}
+/* 在较窄屏幕上适当回退，避免挤压布局 */
+@media (max-width: 560px){
+  input.dec{ min-width: 180px; }
+}
+input.hex:focus, input.dec:focus{
+  border-color:#3b82f6;
+  box-shadow: 0 0 0 3px var(--focus-ring); /* 稍增强的聚焦可视反馈 */
+}
+
+hr.sep{
+  border:0;
+  height:1px;
+  background: var(--color-border);
+  margin: 22px 0; /* 分隔线上下间距同步略缩 */
+}
+ 
+/* 响应式列数：不同类型不并排，强制单列 */
+@media (min-width: 900px){
+  #blocks{
+    grid-template-columns: 1fr;
+  }
+}
+@media (min-width: 1200px){
+  #blocks{
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px){
+  :root{ --bit-size: 18.5px; } /* 小屏稍回调，配合更大字号 */
+  .lead{ font-size: 15px; }
+  .eq{ font-size: 13.5px; }
+  input.hex, input.dec{ font-size: 13.5px; }
+}
+
+/* 右上角主题切换按钮样式 */
+#theme-toggle{
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  height: 34px;
+  min-width: 34px;
+  padding: 6px 10px;
+  border-radius: 18px;
+  border: 1px solid var(--color-border);
+  /* 浅色使用柔和渐变，深色在下方统一覆盖 */
+  background: linear-gradient(180deg, var(--color-bg), color-mix(in oklab, var(--color-bg) 80%, #000));
+  color: var(--color-text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  transition: background .2s ease, color .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+#theme-toggle:hover{
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+}
+#theme-toggle:focus{
+  outline: none;
+  box-shadow: 0 0 0 3px var(--focus-ring);
+  border-color: #3b82f6;
+}
+#theme-toggle:active{
+  transform: translateY(1px);
+}
+
+/* 深色模式下的按钮配色（GitHub 风格深色，降低亮度对比，统一所有按钮外观） */
+/* 主题切换按钮同样继承按钮变量，不再单独设色，保持一致性 */
+html[data-theme="dark"] #theme-toggle{
+  background: var(--btn-bg);
+  border-color: var(--btn-border);
+  color: var(--btn-text);
+  box-shadow: var(--btn-shadow);
+}
+html[data-theme="dark"] #theme-toggle:hover{
+  box-shadow: 0 2px 10px rgba(0,0,0,.5);
+}

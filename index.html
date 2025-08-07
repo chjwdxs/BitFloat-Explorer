@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BitFloat Explorer</title>
+  <link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+  <!-- 主题切换按钮，固定右上角 -->
+  <button id="theme-toggle" aria-label="切换主题" title="切换白天/黑夜">🌙</button>
+  <main class="container">
+    <h1>BitFloat Explorer</h1>
+    <p class="lead">
+      点击下面某个位格可在 0/1 之间切换，或直接编辑右侧十六进制/下方十进制数值。用于建立 IEEE‑754 及相关格式的位级直觉。
+      参考：<a target="_blank" href="https://en.wikipedia.org/wiki/Half-precision_floating-point_format">half-precision</a>、
+      <a target="_blank" href="https://en.wikipedia.org/wiki/Single-precision_floating-point_format">single-precision</a>、
+      <a target="_blank" href="https://en.wikipedia.org/wiki/Double-precision_floating-point_format">double-precision</a>、
+      <a target="_blank" href="https://en.wikipedia.org/wiki/Bfloat16_floating-point_format">bfloat16</a>、
+      <a target="_blank" href="https://arxiv.org/abs/2209.05433">FP8 (E5M2/E4M3)</a>
+    </p>
+
+    <div id="blocks"></div>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
