@@ -311,7 +311,7 @@ html[data-theme="dark"] input.dec:focus{
 }
 /* 将十进制输入框调长，便于显示更长十进制文本 */
 input.dec{
-  min-width: 200px;   /* 默认更长（约较常见宽度+15~20%） */
+  min-width: 250px;   /* 默认更长（约较常见宽度+15~20%） */
   flex: 0 0 auto;     /* 不被压缩 */
 }
 /* 在较窄屏幕上适当回退，避免挤压布局 */
@@ -392,4 +392,164 @@ html[data-theme="dark"] #theme-toggle{
 }
 html[data-theme="dark"] #theme-toggle:hover{
   box-shadow: 0 2px 10px rgba(0,0,0,.5);
+}
+
+/* 自定义格式界面样式 */
+.custom-format-section{
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.custom-format-section h2{
+  margin: 0 0 16px;
+  font-size: 20px;
+  font-weight: 680;
+  color: var(--color-text);
+}
+.custom-inputs{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+.input-group{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.input-group label{
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-muted);
+}
+.input-group input{
+  font-family: var(--mono);
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-radius: 6px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.input-group select{
+  font-family: var(--mono);
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-radius: 6px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+  cursor: pointer;
+}
+.input-group input:focus,
+.input-group select:focus{
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+.input-group small{
+  font-size: 11px;
+  color: var(--color-muted);
+  margin-top: 2px;
+}
+.format-preview{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.format-preview label{
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-muted);
+}
+.format-preview span{
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-weight: 600;
+}
+html[data-theme="dark"] .format-preview span{
+  border-color: #6b7280;
+  background: #0f1116;
+  color: #e6edf3;
+}
+.custom-btn{
+  height: 38px;
+  padding: 0 16px;
+  border: 1px solid var(--btn-border);
+  border-radius: 8px;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s ease;
+  box-shadow: var(--btn-shadow);
+}
+.custom-btn:hover{
+  filter: brightness(1.02);
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+}
+.custom-btn:active{
+  transform: translateY(1px) scale(0.98);
+  filter: brightness(0.96);
+}
+/* 深色主题下的自定义输入框 */
+html[data-theme="dark"] .custom-format-section{
+  border-color: var(--color-border);
+}
+html[data-theme="dark"] .input-group input,
+html[data-theme="dark"] .input-group select{
+  border-color: #6b7280;
+  background: #0f1116;
+  color: #e6edf3;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.10) inset;
+}
+html[data-theme="dark"] .input-group input:focus,
+html[data-theme="dark"] .input-group select:focus{
+  border-color: #58a6ff;
+  box-shadow: 0 0 0 3px rgba(56,139,253,.35);
+}
+html[data-theme="dark"] .custom-btn{
+  background: var(--btn-bg);
+  border-color: var(--btn-border);
+  color: var(--btn-text);
+  box-shadow: var(--btn-shadow);
+}
+html[data-theme="dark"] .custom-btn:hover{
+  box-shadow: 0 2px 10px rgba(0,0,0,.5);
+  filter: none;
+}
+
+/* 自定义格式区块删除按钮 */
+.delete-format{
+  background: #dc2626;
+  border-color: #b91c1c;
+  color: white;
+  font-size: 12px;
+  padding: 4px 8px;
+  margin-left: 8px;
+  border-radius: 4px;
+  height: auto;
+}
+.delete-format:hover{
+  background: #b91c1c;
+  filter: none;
+}
+html[data-theme="dark"] .delete-format{
+  background: #dc2626;
+  border-color: #b91c1c;
+}
+html[data-theme="dark"] .delete-format:hover{
+  background: #b91c1c;
 }
