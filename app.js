@@ -10,14 +10,124 @@
  * - 十六进制输入以 0x 前缀或纯 hex 识别；位宽自动限制并零扩展/截断。
  */
 
-const FORMATS = [
-  { key: "fp16",  title: "16-bit (half)",    sign:1, exp:5, frac:10, bias:15 },
-  { key: "fp32",  title: "32-bit (float)",   sign:1, exp:8, frac:23, bias:127 },
-  { key: "fp64",  title: "64-bit (double)",  sign:1, exp:11,frac:52, bias:1023 },
-  { key: "bf16",  title: "bfloat16",         sign:1, exp:8, frac:7,  bias:127 },
-  { key: "fp8_e5m2", title: "FP8 (E5M2)",    sign:1, exp:5, frac:2,  bias:15 },
-  { key: "fp8_e4m3", title: "FP8 (E4M3)",    sign:1, exp:4, frac:3,  bias:7  },
+// 默认格式（改为let以支持动态添加）
+let FORMATS = [
+  { key: "fp16",  title: "16-bit (half)",    sign:1, exp:5, frac:10, bias:15, isCustom: false },
+  { key: "fp32",  title: "32-bit (float)",   sign:1, exp:8, frac:23, bias:127, isCustom: false },
+  { key: "fp64",  title: "64-bit (double)",  sign:1, exp:11,frac:52, bias:1023, isCustom: false },
+  { key: "bf16",  title: "bfloat16",         sign:1, exp:8, frac:7,  bias:127, isCustom: false },
+  { key: "fp8_e5m2", title: "FP8 (E5M2)",    sign:1, exp:5, frac:2,  bias:15, isCustom: false },
+  { key: "fp8_e4m3", title: "FP8 (E4M3)",    sign:1, exp:4, frac:3,  bias:7, isCustom: false },
 ];
+
+// 自定义格式管理
+const CustomFormatManager = {
+  // 添加自定义格式
+  addFormat(sign, exp, frac) {
+    // 验证输入
+    const validation = this.validateFormat(sign, exp, frac);
+    if (!validation.valid) {
+      throw new Error(validation.error);
+    }
+    
+    // 自动生成格式名称
+    const name = this.generateFormatName(sign, exp, frac);
+    
+    // 自动计算偏移量
+    const bias = this.calculateBias(exp);
+    
+    // 生成唯一key
+    const key = this.generateKey(name);
+    
+    const format = {
+      key,
+      title: name,
+      sign,
+      exp,
+      frac,
+      bias,
+      isCustom: true
+    };
+    
+    FORMATS.push(format);
+    return format;
+  },
+  
+  // 删除自定义格式
+  removeFormat(key) {
+    const index = FORMATS.findIndex(f => f.key === key && f.isCustom);
+    if (index > -1) {
+      FORMATS.splice(index, 1);
+      return true;
+    }
+    return false;
+  },
+  
+  // 自动生成格式名称
+  generateFormatName(sign, exp, frac) {
+    const signPrefix = sign === 0 ? 'U' : 'S';
+    return `${signPrefix}${sign}E${exp}M${frac}`;
+  },
+  
+  // 自动计算偏移量
+  calculateBias(exp) {
+    return exp > 0 ? Math.pow(2, exp - 1) - 1 : 0;
+  },
+  
+  // 生成格式预览文本
+  generatePreviewText(sign, exp, frac) {
+    const name = this.generateFormatName(sign, exp, frac);
+    const bias = this.calculateBias(exp);
+    return `${name} (偏移量: ${bias})`;
+  },
+  
+  // 验证格式参数
+  validateFormat(sign, exp, frac) {
+    if (sign < 0 || sign > 1) {
+      return { valid: false, error: "符号位必须是0或1" };
+    }
+    
+    if (exp < 0 || exp > 32) {
+      return { valid: false, error: "指数位数必须在0-32之间" };
+    }
+    
+    if (frac < 0 || frac > 32) {
+      return { valid: false, error: "小数位数必须在0-32之间" };
+    }
+    
+    const totalBits = sign + exp + frac;
+    if (totalBits === 0) {
+      return { valid: false, error: "总位数不能为0" };
+    }
+    
+    if (totalBits > 64) {
+      return { valid: false, error: "总位数不能超过64位" };
+    }
+    
+    // 检查是否已存在相同配置的格式
+    const formatName = this.generateFormatName(sign, exp, frac);
+    const existingFormat = FORMATS.find(f => f.title === formatName);
+    if (existingFormat) {
+      return { valid: false, error: "已存在相同配置的格式" };
+    }
+    
+    return { valid: true };
+  },
+  
+  // 生成唯一的key
+  generateKey(name) {
+    const baseKey = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    let key = baseKey;
+    let counter = 1;
+    
+    while (FORMATS.find(f => f.key === key)) {
+      key = baseKey + counter;
+      counter++;
+    }
+    
+    return key;
+  }
+};
 
 // 小工具
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -105,7 +215,7 @@ function decodeToNumber(fmt, sign, eField, fField){
 
 function mantToStr(m, fracBits, normalized){
   // 将尾数以固定小数位展示，近似原站样式
-  const digits = Math.min(16, Math.max(3, Math.ceil(fracBits / 3)));
+  const digits = Math.min(20, Math.max(3, Math.ceil(fracBits / 3)));
   if (Number.isNaN(m)) return "NaN";
   return (normalized ? m : m).toFixed(digits).replace(/0+$/,'').replace(/\.$/,'');
 }
@@ -318,7 +428,32 @@ function renderBlock(fmt, mount, initialBits){
   mount.className = `block ${fmt.key}`;
 
   const h2 = document.createElement("h2");
-  h2.textContent = fmt.title;
+  // 如果是自定义格式，添加删除按钮
+  if (fmt.isCustom) {
+    const titleContainer = document.createElement("div");
+    titleContainer.style.display = "flex";
+    titleContainer.style.alignItems = "center";
+    titleContainer.style.justifyContent = "space-between";
+    
+    const titleSpan = document.createElement("span");
+    titleSpan.textContent = fmt.title;
+    
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "删除";
+    deleteBtn.className = "delete-format";
+    deleteBtn.onclick = () => {
+      if (confirm(`确定要删除格式 "${fmt.title}" 吗？`)) {
+        CustomFormatManager.removeFormat(fmt.key);
+        mount.remove(); // 从 DOM 中移除
+      }
+    };
+    
+    titleContainer.appendChild(titleSpan);
+    titleContainer.appendChild(deleteBtn);
+    h2.appendChild(titleContainer);
+  } else {
+    h2.textContent = fmt.title;
+  }
   mount.appendChild(h2);
 
   // 索引行
@@ -539,28 +674,32 @@ function renderBlock(fmt, mount, initialBits){
   // 分隔线
   mount.appendChild(document.createElement("hr")).className = "sep";
 
-  // 生成位格 DOM（注意：指数区在视觉上应当靠近符号位，即最高位侧）
-  // 我们保持“数值位索引 i = 位从右到左（LSB=0）”不变，只影响样式分类。
+  // 生成位格 DOM（根据实际字段分配来着色，而不是固定位置）
   const bitElems = [];
-  for (let i = total - 1; i >= 0; i--){
+  for (let i = total - 1; i >= 0; i--) {
     const el = document.createElement("div");
     el.className = "bit";
-    // 高位 index = total-1 是 sign
-    if (i === total - 1) {
+    
+    // 根据实际字段分配来确定位的类型
+    if (fmt.sign > 0 && i === total - 1) {
+      // 只有当符号位存在且当前是最高位时，才标记为符号位
       el.classList.add("sign");
     } else {
-      // 根据“从高位到低位”的区间划分字段类型：
-      // 位区间（高位→低位）:
-      //   [total-1]            -> sign
-      //   [total-2 .. frac+exp] -> exponent (共 exp 位)
-      //   [frac-1 .. 0]         -> fraction (共 frac 位)
-      const expStart = fmt.frac + fmt.exp; // 该数值是 sign 的移位量
-      if (i >= fmt.frac && i < expStart) {
+      // 计算指数和小数位的边界
+      const fracBits = fmt.frac;
+      const expBits = fmt.exp;
+      
+      // 指数位的起始和结束位置（从右数，0开始）
+      const expStart = fracBits; // 指数位的最低位
+      const expEnd = fracBits + expBits - 1; // 指数位的最高位
+      
+      if (i >= expStart && i <= expEnd) {
         el.classList.add("exp");
       } else {
         el.classList.add("frac");
       }
     }
+    
     el.dataset.index = String(i);
     bitElems.push(el);
     bitsWrap.appendChild(el);
@@ -747,8 +886,8 @@ function formatDecimal(x){
   let s = x.toString();
   if (!/e|E/.test(s)){
     // 限制长度，避免过长
-    if (s.length > 18){
-      s = x.toExponential(12);
+    if (s.length > 22){
+      s = x.toExponential(20);
     }
   }
   return s;
@@ -798,13 +937,137 @@ function main(){
   initTheme();
 
   const blocks = document.getElementById("blocks");
-  FORMATS.forEach((fmt, idx)=>{
-    const host = document.createElement("section");
-    // 为不同格式加上可识别 class，避免样式/行为误匹配
-    host.className = `block ${fmt.key}`;
-    blocks.appendChild(host);
-    renderBlock(fmt, host);
-  });
+  
+  // 创建自定义格式添加界面
+  function createCustomFormatSection() {
+    const section = document.createElement('div');
+    section.className = 'custom-format-section';
+    section.innerHTML = `
+      <h2>添加自定义格式</h2>
+      <div class="custom-inputs">
+        <div class="input-group">
+          <label for="custom-sign">符号位:</label>
+          <select id="custom-sign">
+            <option value="0">无符号（0位）</option>
+            <option value="1" selected>有符号（1位）</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label for="custom-exp">指数位:</label>
+          <input type="number" id="custom-exp" min="0" max="32" value="8">
+        </div>
+        <div class="input-group">
+          <label for="custom-frac">小数位:</label>
+          <input type="number" id="custom-frac" min="0" max="32" value="0">
+        </div>
+        <div class="format-preview">
+          <label>格式预览:</label>
+          <span id="format-preview-text">S1E8M0 (偏移量: 127)</span>
+        </div>
+        <button id="add-custom-format" class="custom-btn">添加格式</button>
+      </div>
+    `;
+    return section;
+  }
+  
+  // 渲染所有格式区块
+  function renderAllFormats() {
+    // 清空现有区块
+    blocks.innerHTML = '';
+    
+    FORMATS.forEach((fmt, idx)=>{
+      const host = document.createElement("section");
+      // 为不同格式加上可识别 class，避免样式/行为误匹配
+      host.className = `block ${fmt.key}`;
+      blocks.appendChild(host);
+      renderBlock(fmt, host);
+      
+      // 在FP8（E4M3）后面插入自定义格式添加界面
+      if (fmt.key === 'fp8_e4m3') {
+        const customSection = createCustomFormatSection();
+        blocks.appendChild(customSection);
+        // 在添加自定义界面后立即初始化事件
+        setTimeout(() => initCustomFormatUI(), 0);
+      }
+    });
+  }
+  
+  // 自定义格式界面事件处理
+  function initCustomFormatUI() {
+    const signSelect = document.getElementById('custom-sign');
+    const expInput = document.getElementById('custom-exp');
+    const fracInput = document.getElementById('custom-frac');
+    const previewText = document.getElementById('format-preview-text');
+    const addBtn = document.getElementById('add-custom-format');
+    
+    // 检查元素是否存在
+    if (!signSelect || !expInput || !fracInput || !previewText || !addBtn) {
+      return;
+    }
+    
+    // 更新格式预览
+    function updatePreview() {
+      const sign = parseInt(signSelect.value) || 0;
+      const exp = parseInt(expInput.value) || 0;
+      const frac = parseInt(fracInput.value) || 0;
+      
+      const preview = CustomFormatManager.generatePreviewText(sign, exp, frac);
+      previewText.textContent = preview;
+      
+      // 验证格式是否有效
+      const validation = CustomFormatManager.validateFormat(sign, exp, frac);
+      addBtn.disabled = !validation.valid;
+      
+      if (!validation.valid) {
+        previewText.style.color = '#dc2626';
+        addBtn.title = validation.error;
+      } else {
+        previewText.style.color = '';
+        addBtn.title = '添加这个自定义格式';
+      }
+    }
+    
+    // 绑定输入事件
+    signSelect.addEventListener('change', updatePreview);
+    expInput.addEventListener('input', updatePreview);
+    fracInput.addEventListener('input', updatePreview);
+    
+    // 初始化预览
+    updatePreview();
+    
+    // 添加格式按钮事件
+    addBtn.addEventListener('click', () => {
+      try {
+        const sign = parseInt(signSelect.value);
+        const exp = parseInt(expInput.value);
+        const frac = parseInt(fracInput.value);
+        
+        // 添加格式
+        const newFormat = CustomFormatManager.addFormat(sign, exp, frac);
+        
+        // 重新渲染所有格式
+        renderAllFormats();
+        
+        alert(`格式 "${newFormat.title}" 添加成功！`);
+        
+      } catch (error) {
+        alert('错误: ' + error.message);
+      }
+    });
+    
+    // Enter 键快捷添加
+    [expInput, fracInput].forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !addBtn.disabled) {
+          e.preventDefault();
+          addBtn.click();
+        }
+      });
+    });
+  }
+  
+  // 初始渲染
+  renderAllFormats();
 }
  
 document.addEventListener("DOMContentLoaded", main);
